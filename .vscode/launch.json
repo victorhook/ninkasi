@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Remote Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/ninkasi",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerServerAddress": "ninkasi:1234",
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set sysroot to local copy of Raspberry Pi filesystem",
+                    "text": "set sysroot ${workspaceFolder}/sysroot",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
