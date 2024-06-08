@@ -24,7 +24,9 @@ SRC = src
 SRCS = \
 	$(SRC)/main.cpp \
 	$(SRC)/mavcom.cpp \
-	$(SRC)/utils.cpp
+	$(SRC)/utils.cpp \
+	$(SRC)/ap.cpp
+
 
 # Object files directory
 BUILD_DIR = build
@@ -59,5 +61,8 @@ clean:
 upload:
 	scp $(TARGET) victor@ninkasi:/home/victor/ninkasi/
 
+sync:
+	rsync -a include victor@ninkasi:/home/victor/ninkasi/
+
 # Phony targets
-.PHONY: all clean upload
+.PHONY: all clean upload sync

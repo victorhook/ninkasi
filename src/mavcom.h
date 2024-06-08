@@ -1,6 +1,7 @@
 #ifndef MAVCOM_H
 #define MAVCOM_H
 
+#include "mavlink.h"
 #include "utils.h"
 
 #define MAVPROXY_TCP_PORT 2223
@@ -26,6 +27,8 @@ class Mavcom
         void tcp_writer(const int sockfd);
         void serial_reader();
         void serial_writer(const int sockfd);
+
+        int start_tcp_server();
 };
 
 #endif /* MAVCOM_H */

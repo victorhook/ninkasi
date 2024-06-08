@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <cstring>
 
+auto start_time = std::chrono::steady_clock::now();
 
 // Function to open and initialize the serial port
 int serial_open(const char* portName, int baudRate) {
@@ -47,6 +48,16 @@ int serial_open(const char* portName, int baudRate) {
     return serial_port;
 }
 
+uint64_t micros() {
+    using namespace std::chrono;
+    return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+// Function to get the current timestamp in milliseconds
+uint64_t millis() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
 
 template <typename T>
 void ThreadSafeQueue<T>::enqueue(T item) {
@@ -73,6 +84,21 @@ bool ThreadSafeQueue<T>::try_dequeue(T& item) {
     item = std::move(queue_.front());
     queue_.pop();
     return true;
+}
+
+template <typename T>
+bool ThreadSafeQueue<T>::try_dequeue_for(T& item, uint32_t timeout_ms) {
+    using namespace std::chrono;
+    auto timeout_duration = milliseconds(timeout_ms);
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    if (!cond_var_.wait_for(lock, timeout_duration, [this] { return !queue_.empty(); })) {
+        return false; // Timeout occurred
+    }
+
+    item = std::move(queue_.front());
+    queue_.pop();
+    return true; // Successfully dequeued item
 }
 
 template <typename T>

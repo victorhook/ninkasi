@@ -3,7 +3,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/mavlink",
+                "${workspaceFolder}/include/mavlink/ardupilotmega",
             ],
             "defines": [],
             "compilerPath": "/usr/lib/ccache/aarch64-linux-gnu-g++",
