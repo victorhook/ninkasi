@@ -78,6 +78,7 @@ void AP::mav_handle_sys_status(const mavlink_message_t& msg)
 {
     mavlink_sys_status_t status;
     mavlink_msg_sys_status_decode(&msg, &status);
+    telemetry.battery = (float) status.voltage_battery / 1000.0;
     printf(">>> AP_STATUS: Voltage: %d\n", status.voltage_battery);
 }
 

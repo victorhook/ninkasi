@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <termios.h>
 
+#include "telemetry.h"
+
 #include "ardupilotmega/mavlink.h"
 
 // Function to open and initialize the serial port
@@ -68,5 +70,7 @@ private:
 
 template class ThreadSafeQueue<uint8_t>;
 template class ThreadSafeQueue<mavlink_message_t>;
+template class ThreadSafeQueue<Telemetry>;
+
 
 #endif /* UTILS_H */

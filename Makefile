@@ -30,6 +30,7 @@ SRCS = \
 	$(SRC)/mavcom.cpp \
 	$(SRC)/utils.cpp \
 	$(SRC)/command_server.cpp \
+	$(SRC)/telemetry_server.cpp \
 	$(SRC)/ap.cpp
 
 

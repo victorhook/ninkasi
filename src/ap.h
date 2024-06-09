@@ -2,7 +2,7 @@
 #define AP_H
 
 #include "mavcom.h"
-
+#include "telemetry.h"
 
 class AP
 {
@@ -16,6 +16,7 @@ class AP
         void handle_mavlink_message(const mavlink_message_t& msg, const mavlink_status_t& status);
 
         Mavcom mavcom;
+        Telemetry telemetry;
         uint32_t frame_number;
 
     private:

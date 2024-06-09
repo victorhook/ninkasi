@@ -139,6 +139,8 @@ void TcpServer::run() {
             continue;
         }
 
+        printf("New client connected to TCP server on port %d!\n", port);
+
         if (handle_in_thread()) {
             std::thread(&TcpServer::handle_client, this, client_socket).detach();
         } else {
