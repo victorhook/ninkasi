@@ -6,6 +6,11 @@
 #include <unistd.h>
 #include <termios.h>
 #include <cstring>
+#include <vector>
+#include <memory>
+#include <thread>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 auto start_time = std::chrono::steady_clock::now();
 
@@ -72,9 +77,83 @@ uint64_t millis() {
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
+
+
+
+TcpServer::TcpServer(int port) : port(port), running(false) {}
+
+TcpServer::~TcpServer() {
+    stop();
+}
+
+void TcpServer::start() {
+    server_thread = std::thread(&TcpServer::run, this);
+}
+
+void TcpServer::stop() {
+    running = false;
+    if (server_thread.joinable()) {
+        server_thread.join();
+    }
+}
+
+void TcpServer::run() {
+    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == -1) {
+        perror("Failed to create socket\n");
+        return;
+    }
+
+    int opt = 1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("Setting socket options failed!");
+        return;
+    }
+
+    sockaddr_in server_addr{};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(port);
+
+    if (bind(server_socket, (sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        perror("Failed to bind socket");
+        close(server_socket);
+        return;
+    }
+
+    if (listen(server_socket, 10) == -1) {
+        perror("Failed to listen on socket");
+        close(server_socket);
+        return;
+    }
+
+    running = true;
+    printf("TCP server started on port %d\n", port);
+
+    while (running) {
+        sockaddr_in client_addr{};
+        socklen_t client_addr_len = sizeof(client_addr);
+        int client_socket = accept(server_socket, (sockaddr*)&client_addr, &client_addr_len);
+        if (client_socket == -1) {
+            perror("Failed to accept client connection");
+            continue;
+        }
+
+        if (handle_in_thread()) {
+            std::thread(&TcpServer::handle_client, this, client_socket).detach();
+        } else {
+            handle_client(client_socket);
+        }
+    }
+
+    close(server_socket);
+}
+
+
 template <typename T>
 void ThreadSafeQueue<T>::enqueue(T item) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
+    full_cond_var_.wait(lock, [this] { return queue_.size() < max_size_; });
     queue_.push(std::move(item));
     cond_var_.notify_one();
 }
@@ -85,6 +164,7 @@ T ThreadSafeQueue<T>::dequeue() {
     cond_var_.wait(lock, [this] { return !queue_.empty(); });
     T item = std::move(queue_.front());
     queue_.pop();
+    full_cond_var_.notify_one();
     return item;
 }
 
@@ -96,11 +176,12 @@ bool ThreadSafeQueue<T>::try_dequeue(T& item) {
     }
     item = std::move(queue_.front());
     queue_.pop();
+    full_cond_var_.notify_one();
     return true;
 }
 
 template <typename T>
-bool ThreadSafeQueue<T>::try_dequeue_for(T& item, uint32_t timeout_ms) {
+bool ThreadSafeQueue<T>::try_dequeue_for(T& item, uint64_t timeout_ms) {
     using namespace std::chrono;
     auto timeout_duration = milliseconds(timeout_ms);
     std::unique_lock<std::mutex> lock(mutex_);
@@ -111,6 +192,7 @@ bool ThreadSafeQueue<T>::try_dequeue_for(T& item, uint32_t timeout_ms) {
 
     item = std::move(queue_.front());
     queue_.pop();
+    full_cond_var_.notify_one();
     return true; // Successfully dequeued item
 }
 
@@ -121,8 +203,13 @@ bool ThreadSafeQueue<T>::empty() const {
 }
 
 template <typename T>
+bool ThreadSafeQueue<T>::full() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return queue_.size() >= max_size_;
+}
+
+template <typename T>
 size_t ThreadSafeQueue<T>::size() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.size();
 }
-

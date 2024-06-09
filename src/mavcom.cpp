@@ -1,7 +1,9 @@
 #include "mavcom.h"
-#include "mavlink.h"
 #include "utils.h"
 #include "ap.h"
+
+#include "mavlink/minimal/mavlink.h"
+#include "mavlink/ardupilotmega/mavlink.h"
 
 #include <netinet/in.h>
 #include <thread>
@@ -12,8 +14,11 @@
 #include <signal.h>
 
 
-Mavcom::Mavcom(const char* serial_port, const int baudrate)
-: m_baudrate(baudrate)
+Mavcom::Mavcom(const char* serial_port, const int baudrate) :
+m_baudrate(baudrate),
+m_serial_fd(-1),
+m_serial_mav_queue_tx(100),
+m_serial_mav_queue_rx(100)
 {
     strcpy(m_serial_port, serial_port);
 }
@@ -30,16 +35,58 @@ bool Mavcom::init()
     std::thread th_serial_reader(&Mavcom::serial_reader, this);
     th_serial_reader.detach();
 
-    std::thread th_tcp_proxy(&Mavcom::tcp_reader, this);
-    th_tcp_proxy.detach();
+    //std::thread th_tcp_proxy(&Mavcom::tcp_reader, this);
+    //th_tcp_proxy.detach();
 
-    return false;
+    std::thread(&Mavcom::mavlink_serial_writer, this).detach();
+
+    return true;
 }
 
-bool Mavcom::send()
+
+void Mavcom::send_command_int(uint16_t command, float param1, float param2, float param3, float param4, float param5, float param6, float param7)
 {
-    return false;
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack(
+        NINKASI_SYSTEM_ID, NINKASI_COMPONENT_ID, &msg, AP_SYSTEM_ID, AP_COMPONENT_ID, 0,
+        command,
+        0, 0, // Not used
+        param1,
+        param2,
+        param3,
+        param4,
+        param5,
+        param6,
+        param7
+    );
+    send_message(msg);
 }
+
+void Mavcom::request_data_stream(const uint32_t msgid, const uint32_t interval_ms)
+{
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack(
+        NINKASI_SYSTEM_ID, NINKASI_COMPONENT_ID, &msg, AP_SYSTEM_ID, AP_COMPONENT_ID, MAV_FRAME_MISSION,
+        MAV_CMD_SET_MESSAGE_INTERVAL,
+        0, 0, // Not used
+        msgid,
+        interval_ms * 1000, // Interval is expected in us
+        0,
+        0,
+        0,
+        0,
+        0
+    );
+    send_message(msg);
+}
+
+
+void Mavcom::send_message(mavlink_message_t& msg)
+{
+    //printf("Queueing message %d (size: %ld)\n", msg.msgid, m_serial_mav_queue_tx.size());
+    m_serial_mav_queue_tx.enqueue(msg);
+}
+
 
 // -- Private -- //
 void Mavcom::serial_reader()
@@ -57,7 +104,7 @@ void Mavcom::serial_reader()
     printf("Serial connection opened to port %s with baudrate %d\n", m_serial_port, m_baudrate);
 
     // Start writer thread
-    std::thread(&Mavcom::serial_writer, this, fd).detach();
+    m_serial_fd = fd;
 
     bool running = true;
     mavlink_message_t msg;
@@ -75,15 +122,50 @@ void Mavcom::serial_reader()
             // First well parse incoming data as potential mavlink data
             if (mavlink_parse_char(MAVLINK_COMM_0, buf, &msg, &status))
             {
+                //printf("NEW MSG: %d (err: %d)\n", msg.msgid, status.parse_error);
                 ap.handle_mavlink_message(msg, status);
-            }
 
-            // After we've tried parsing the data, we'll put it to queue for potential proxying
-            m_serial_queue_rx.enqueue(buf);
+                // After we've tried parsing the data, we'll put it to queue for potential proxying
+                //if (!m_serial_mav_queue_rx.full())
+                //{
+                //    m_serial_mav_queue_rx.enqueue(msg);
+                //}
+            }
         }
     }
 
     printf("Serial connection %s closed", m_serial_port);
+}
+
+
+void Mavcom::mavlink_serial_writer()
+{
+    static uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+    static mavlink_message_t msg;
+    bool take_from_queue = true;
+
+    while (1)
+    {
+        if (take_from_queue)
+        {
+            msg = m_serial_mav_queue_tx.dequeue();
+        }
+
+        //printf("Sending message: %d, taking from queue: %d", msg.msgid, take_from_queue);
+
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+        ssize_t bytes_written = write(m_serial_fd, buf, len);
+
+        // We'll only take next message from queue if we successfully sent the message
+        take_from_queue = bytes_written == len;
+        if (!take_from_queue)
+        {
+            // If the transmission failed, we'll wait a bit to avoid spamming the connection
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        //printf(" (%ld/%d sent)\n", bytes_written, len);
+    }
 }
 
 
@@ -112,6 +194,8 @@ void Mavcom::tcp_reader()
         std::thread writer(&Mavcom::tcp_writer, this, client_fd);
 
         bool client_connected = true;
+        mavlink_message_t mav_msg;
+        mavlink_status_t mav_status;
         while (client_connected)
         {
             uint8_t buf;
@@ -123,7 +207,13 @@ void Mavcom::tcp_reader()
             }
             else if (res > 0)
             {
-                m_serial_queue_tx.enqueue(buf);
+                // We've received data that should be tunneled to AP. We'll try to parse it into mavlink data
+                if (mavlink_parse_char(MAVLINK_COMM_1, res, &mav_msg, &mav_status))
+                {
+                    m_serial_mav_queue_tx.enqueue(mav_msg);
+                }
+
+                //m_serial_queue_tx.enqueue(buf);
             }
         }
 
@@ -145,13 +235,18 @@ void Mavcom::tcp_writer(const int sockfd)
 {
     signal(SIGPIPE, handle_sigpipe);
 
+    static uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
     bool running = true;
     while (running)
     {
-        uint8_t data;
-        if (m_serial_queue_rx.try_dequeue_for(data, 1000))
+        //uint8_t data;
+        mavlink_message_t msg;
+        if (m_serial_mav_queue_rx.try_dequeue_for(msg, 1000))
         {
-            int bb = write(sockfd, &data, 1);
+            uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+            int bb = write(sockfd, buf, len);
+            //int bb = write(sockfd, &data, 1);
             if (bb < 0)
             {
                 running = false;
@@ -167,21 +262,6 @@ void Mavcom::tcp_writer(const int sockfd)
         }
     }
 }
-
-void Mavcom::serial_writer(const int sockfd)
-{
-    bool running = true;
-    while (running)
-    {
-        uint8_t data = m_serial_queue_tx.dequeue();
-        if (write(sockfd, &data, 1) < 0)
-        {
-            close(sockfd);
-            running = false;
-        }
-    }
-}
-
 
 int Mavcom::start_tcp_server()
 {

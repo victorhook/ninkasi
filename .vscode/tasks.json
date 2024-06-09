@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start gdbserver on remote",
+            "type": "shell",
+            "command": "ssh",
+            "args": [
+                "victor@ninkasi",
+                "gdbserver :1234 ninkasi/ninkasi &"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

@@ -2,17 +2,21 @@
 #CC = g++
 CC = aarch64-linux-gnu-g++
 
+#$(shell tools/gen_mav_includes.sh) \
+
 INCLUDES = \
-	-Iinclude/mavlink/minimal  \
- 	-I$(SYSROOT)/usr/include  \
-	-I$(SYSROOT)/usr/include/aarch64-linux-gnu  \
-	-I./mavlink/include  \
-	-I./include
+	-I./include \
+	-I./include/mavlink \
+ 	-I./$(SYSROOT)/lib  \
+	-I./$(SYSROOT)/usr/lib  \
+	-I./$(SYSROOT)/usr/include  \
+	-I./$(SYSROOT)/usr/include/aarch64-linux-gnu
 
 SYSROOT = /home/victor/coding/projects/ninkasi/sysroot
 
 # Compiler flags
 CCFLAGS = -Wall -g -std=c++17 -O0 --sysroot=$(SYSROOT) $(INCLUDES)
+CCFLAGS += -Wno-address-of-packed-member  # This is known warning from mavlink
 
 
 # Linker flags
@@ -25,6 +29,7 @@ SRCS = \
 	$(SRC)/main.cpp \
 	$(SRC)/mavcom.cpp \
 	$(SRC)/utils.cpp \
+	$(SRC)/command_server.cpp \
 	$(SRC)/ap.cpp
 
 
