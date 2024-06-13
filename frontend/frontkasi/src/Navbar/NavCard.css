@@ -1,0 +1,9 @@
+.navcard {
+    background-color: aliceblue;
+    padding: 0.5em 1.5em;
+    margin: 0.5em;
+}
+
+.navcard-title {
+    color: rgb(83, 83, 83);
+}
