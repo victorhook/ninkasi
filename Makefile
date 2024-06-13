@@ -1,18 +1,17 @@
 # Compiler
-#CC = g++
 CC = aarch64-linux-gnu-g++
 
-#$(shell tools/gen_mav_includes.sh) \
+SYSROOT = /home/victor/coding/projects/ninkasi/sysroot
+
+TARGET_HOST = victor@ninkasi
 
 INCLUDES = \
 	-I./include \
 	-I./include/mavlink \
- 	-I./$(SYSROOT)/lib  \
-	-I./$(SYSROOT)/usr/lib  \
-	-I./$(SYSROOT)/usr/include  \
-	-I./$(SYSROOT)/usr/include/aarch64-linux-gnu
-
-SYSROOT = /home/victor/coding/projects/ninkasi/sysroot
+ 	-I$(SYSROOT)/lib  \
+	-I$(SYSROOT)/usr/lib \
+	-I$(SYSROOT)/usr/include  \
+	-I$(SYSROOT)/usr/include/aarch64-linux-gnu
 
 # Compiler flags
 CCFLAGS = -Wall -g -std=c++17 -O0 --sysroot=$(SYSROOT) $(INCLUDES)
@@ -20,7 +19,7 @@ CCFLAGS += -Wno-address-of-packed-member  # This is known warning from mavlink
 
 
 # Linker flags
-LDFLAGS = -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -L$(SYSROOT)/usr/lib/aarch64-linux-gnu -lpthread
+LDFLAGS = -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -L$(SYSROOT)/usr/lib/aarch64-linux-gnu -lpthread -larmadillo -llapack -lblas
 
 
 # Source files directory and specific source files
@@ -31,6 +30,7 @@ SRCS = \
 	$(SRC)/utils.cpp \
 	$(SRC)/command_server.cpp \
 	$(SRC)/telemetry_server.cpp \
+	$(SRC)/mavproxy.cpp \
 	$(SRC)/ap.cpp
 
 
@@ -46,10 +46,10 @@ all: $(TARGET)
 
 # Link object files to create the executable
 $(TARGET): $(OBJS)
+	@$(CC) $(CCFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 	@echo
 	@echo "Build finished: $(TARGET)"
 	@echo
-	@$(CC) $(CCFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # Compile source files to object files in build directory
 $(BUILD_DIR)/%.o: $(SRC)/%.cpp | $(BUILD_DIR)
@@ -65,10 +65,32 @@ clean:
 	rm -f $(BUILD_DIR)/*.o $(TARGET)
 
 upload:
-	scp $(TARGET) victor@ninkasi:/home/victor/ninkasi/
+	scp $(TARGET) video.py $(TARGET_HOST):/home/victor/ninkasi/
+
+upload_py:
+	scp video.py $(TARGET_HOST):/home/victor/ninkasi/
 
 sync:
-	rsync -a include victor@ninkasi:/home/victor/ninkasi/
+	rsync -avz $(TARGET_HOST):/lib sysroot/
+	rsync -avz $(TARGET_HOST):/usr/include sysroot/usr/
+	rsync -avz $(TARGET_HOST):/usr/lib sysroot/usr/
+	rsync -avz $(TARGET_HOST):/etc/alternatives sysroot/etc/
+
+fix_broken_symlinks:
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/libblas.so.3 /home/victor/projects/ninkasi/sysroot/etc/alternatives/libblas.so.3-aarch64-linux-gnu
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/libblas.so /home/victor/projects/ninkasi/sysroot/etc/alternatives/libblas.so-aarch64-linux-gnu
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/include/aarch64-linux-gnu/cblas-atlas.h /home/victor/projects/ninkasi/sysroot/usr/include/aarch64-linux-gnu/cblas.h
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/libblas.a /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/libblas.a
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/libblas.so /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/libblas.so
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/libblas.so.3 /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/libblas.so.3
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/blas-atlas.pc /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/blas.pc
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/lapack-atlas.pc /home/victor/projects/ninkasi/sysroot/etc/alternatives/lapack.pc-aarch64-linux-gnu
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/liblapack.so /home/victor/projects/ninkasi/sysroot/etc/alternatives/liblapack.so-aarch64-linux-gnu
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/liblapack.a /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/liblapack.a
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/liblapack.so /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/liblapack.so
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/atlas/liblapack.so.3.10.3 /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/liblapack.so.3
+	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/lapack-atlas.pc /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/lapack.pc
+
 
 # Phony targets
 .PHONY: all clean upload sync
