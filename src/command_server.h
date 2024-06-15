@@ -12,7 +12,7 @@ class CommandServer : public TcpServer
 
     protected:
         void handle_client(int client_socket) override;
-        bool handle_in_thread() const override;
+        std::string name() const override;
 
     private:
         void handle_command(const std::string& msg);

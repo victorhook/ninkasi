@@ -31,8 +31,7 @@ void TelemetryServer::handle_client(int client_socket)
     }
 }
 
-bool TelemetryServer::handle_in_thread() const
+std::string TelemetryServer::name() const
 {
-    return false;
+    return "TelemetryServer";
 }
-

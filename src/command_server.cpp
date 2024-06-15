@@ -43,9 +43,9 @@ void CommandServer::handle_client(int client_socket)
     printf("Connection to socket %d closed\n", client_socket);
 }
 
-bool CommandServer::handle_in_thread() const
+std::string CommandServer::name() const
 {
-    return false;
+    return "CommandServer";
 }
 
 

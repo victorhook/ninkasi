@@ -14,7 +14,7 @@ class TelemetryServer : public TcpServer
 
     protected:
         void handle_client(int client_socket) override;
-        bool handle_in_thread() const override;
+        std::string name() const override;
 
     private:
         ThreadSafeQueue<Telemetry> m_telem_queue;

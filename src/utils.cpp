@@ -86,15 +86,13 @@ TcpServer::~TcpServer() {
     stop();
 }
 
-void TcpServer::start() {
-    server_thread = std::thread(&TcpServer::run, this);
+void TcpServer::start()
+{
+    std::thread(&TcpServer::run, this).detach();
 }
 
 void TcpServer::stop() {
     running = false;
-    if (server_thread.joinable()) {
-        server_thread.join();
-    }
 }
 
 void TcpServer::run() {
@@ -128,7 +126,7 @@ void TcpServer::run() {
     }
 
     running = true;
-    printf("TCP server started on port %d\n", port);
+    std::cout << name() << ": server started on port " << port << std::endl;
 
     while (running) {
         sockaddr_in client_addr{};
@@ -139,13 +137,9 @@ void TcpServer::run() {
             continue;
         }
 
-        printf("New client connected to TCP server on port %d!\n", port);
+        std::cout << name() << ": New client connected" << std::endl;
 
-        if (handle_in_thread()) {
-            std::thread(&TcpServer::handle_client, this, client_socket).detach();
-        } else {
-            handle_client(client_socket);
-        }
+        handle_client(client_socket);
     }
 
     close(server_socket);

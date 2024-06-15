@@ -34,12 +34,11 @@ public:
 
 protected:
     virtual void handle_client(int client_socket) = 0;
-    virtual bool handle_in_thread() const = 0;
+    virtual std::string name() const = 0;
 
 private:
     int port;
     bool running;
-    std::thread server_thread;
     void run();
 };
 
