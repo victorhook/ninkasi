@@ -11,15 +11,19 @@ INCLUDES = \
  	-I$(SYSROOT)/lib  \
 	-I$(SYSROOT)/usr/lib \
 	-I$(SYSROOT)/usr/include  \
+	-I$(SYSROOT)/usr/include/libcamera \
+	-I$(SYSROOT)/usr/include/libcamera-apps \
+	-I$(SYSROOT)/usr/include/opencv4 \
 	-I$(SYSROOT)/usr/include/aarch64-linux-gnu
 
 # Compiler flags
 CCFLAGS = -Wall -g -std=c++17 -O0 --sysroot=$(SYSROOT) $(INCLUDES)
 CCFLAGS += -Wno-address-of-packed-member  # This is known warning from mavlink
 
+LIBCAMERA_LIBS = -lcamera -lcamera-base
 
 # Linker flags
-LDFLAGS = -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -L$(SYSROOT)/usr/lib/aarch64-linux-gnu -lpthread -larmadillo -llapack -lblas
+LDFLAGS = -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -L$(SYSROOT)/usr/lib/aarch64-linux-gnu -lpthread -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_videoio -lopencv_imgproc -larmadillo -llapack -lblas $(LIBCAMERA_LIBS)
 
 
 # Source files directory and specific source files
@@ -31,6 +35,9 @@ SRCS = \
 	$(SRC)/command_server.cpp \
 	$(SRC)/telemetry_server.cpp \
 	$(SRC)/mavproxy.cpp \
+	$(SRC)/simple_camera.cpp \
+	$(SRC)/video_server.cpp \
+	$(SRC)/mapped_framebuffer.cpp \
 	$(SRC)/ap.cpp
 
 
@@ -64,10 +71,10 @@ $(BUILD_DIR):
 clean:
 	rm -f $(BUILD_DIR)/*.o $(TARGET)
 
-upload:
+deploy:
 	scp $(TARGET) video.py $(TARGET_HOST):/home/victor/ninkasi/
 
-upload_py:
+deploy_py:
 	scp video.py $(TARGET_HOST):/home/victor/ninkasi/
 
 sync:
@@ -92,5 +99,8 @@ fix_broken_symlinks:
 	ln -sf /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/lapack-atlas.pc /home/victor/projects/ninkasi/sysroot/usr/lib/aarch64-linux-gnu/pkgconfig/lapack.pc
 
 
+gen_telemetry:
+	tools/convert_telemetry.py -i $(SRC)/telemetry.h -o frontend/frontkasi/src/Telemetry.js
+
 # Phony targets
-.PHONY: all clean upload sync
+.PHONY: all clean deploy deploy_py sync gen_telemetry
