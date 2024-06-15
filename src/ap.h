@@ -23,9 +23,28 @@ class AP
         uint32_t m_last_heartbeat;
 
         // Mavlink handlers
-        void mav_handle_heartbeat(const mavlink_message_t& msg);
         void mav_handle_sys_status(const mavlink_message_t& msg);
+        void mav_handle_distance_sensor(const mavlink_message_t& msg);
+        void mav_handle_radio_status(const mavlink_message_t& msg);
+        void mav_handle_gps_raw_int(const mavlink_message_t& msg);
+        void mav_handle_scaled_imu(const mavlink_message_t& msg);
+        void mav_handle_scaled_pressure(const mavlink_message_t& msg);
+        void mav_handle_attitude(const mavlink_message_t& msg);
+        void mav_handle_local_position_ned(const mavlink_message_t& msg);
+        void mav_handle_global_position_int(const mavlink_message_t& msg);
+        void mav_handle_rc_channels(const mavlink_message_t& msg);
+        void mav_handle_servo_output_raw(const mavlink_message_t& msg);
+        void mav_handle_altitude(const mavlink_message_t& msg);
+        void mav_handle_battery_status(const mavlink_message_t& msg);
+        void mav_handle_vibration(const mavlink_message_t& msg);
+        void mav_handle_esc_status(const mavlink_message_t& msg);
+        void mav_handle_optical_flow(const mavlink_message_t& msg);
+
+
+        void mav_handle_autopilot_version(const mavlink_message_t& msg);
+        void mav_handle_heartbeat(const mavlink_message_t& msg);
         void mav_handle_statustext(const mavlink_message_t& msg);
+        void mav_handle_timesync(const mavlink_message_t& msg);
         void mav_handle_command_ack(const mavlink_message_t& msg);
         void mav_handle_param_value(const mavlink_message_t& msg);
 };
