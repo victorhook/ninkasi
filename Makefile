@@ -8,6 +8,7 @@ TARGET_HOST = victor@ninkasi
 INCLUDES = \
 	-I./include \
 	-I./include/mavlink \
+	-I./websocketpp \
  	-I$(SYSROOT)/lib  \
 	-I$(SYSROOT)/usr/lib \
 	-I$(SYSROOT)/usr/include  \
@@ -16,6 +17,11 @@ INCLUDES = \
 	-I$(SYSROOT)/usr/include/opencv4 \
 	-I$(SYSROOT)/usr/include/aarch64-linux-gnu
 
+LINKER_LIBS = \
+	-L$(SYSROOT)/usr/lib \
+	-L$(SYSROOT)/lib \
+	-L$(SYSROOT)/usr/lib/aarch64-linux-gnu
+
 # Compiler flags
 CCFLAGS = -Wall -g -std=c++17 -O0 --sysroot=$(SYSROOT) $(INCLUDES)
 CCFLAGS += -Wno-address-of-packed-member  # This is known warning from mavlink
@@ -23,13 +29,12 @@ CCFLAGS += -Wno-address-of-packed-member  # This is known warning from mavlink
 LIBCAMERA_LIBS = -lcamera -lcamera-base
 
 # Linker flags
-LDFLAGS = -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -L$(SYSROOT)/usr/lib/aarch64-linux-gnu -lpthread -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_videoio -lopencv_imgproc -larmadillo -llapack -lblas $(LIBCAMERA_LIBS)
+LDFLAGS = $(LINKER_LIBS) -lpthread -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_videoio -lopencv_imgproc -larmadillo -llapack -lblas $(LIBCAMERA_LIBS)
 
 
 # Source files directory and specific source files
 SRC = src
 SRCS = \
-	$(SRC)/main.cpp \
 	$(SRC)/mavcom.cpp \
 	$(SRC)/utils.cpp \
 	$(SRC)/command_server.cpp \
@@ -38,12 +43,19 @@ SRCS = \
 	$(SRC)/simple_camera.cpp \
 	$(SRC)/video_server.cpp \
 	$(SRC)/mapped_framebuffer.cpp \
-	$(SRC)/ap.cpp
+	$(SRC)/ap.cpp \
+	$(SRC)/ws_server.cpp \
+	$(SRC)/mission/mission.cpp \
+	$(SRC)/mission/state.cpp \
+	$(SRC)/main.cpp
 
 
 # Object files directory
 BUILD_DIR = build
 OBJS = $(patsubst $(SRC)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+
+# Dependency files
+DEPS = $(OBJ:.o=.d)
 
 # Executable name
 TARGET = ninkasi
@@ -60,8 +72,11 @@ $(TARGET): $(OBJS)
 
 # Compile source files to object files in build directory
 $(BUILD_DIR)/%.o: $(SRC)/%.cpp | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	@echo "  CC $<"
 	@$(CC) $(CCFLAGS) -c $< -o $@
+
+-include $(DEPS)
 
 # Ensure the build directory exists
 $(BUILD_DIR):
@@ -81,6 +96,7 @@ sync:
 	rsync -avz $(TARGET_HOST):/lib sysroot/
 	rsync -avz $(TARGET_HOST):/usr/include sysroot/usr/
 	rsync -avz $(TARGET_HOST):/usr/lib sysroot/usr/
+	rsync -avz $(TARGET_HOST):/usr/local sysroot/usr/
 	rsync -avz $(TARGET_HOST):/etc/alternatives sysroot/etc/
 
 fix_broken_symlinks:
@@ -101,6 +117,9 @@ fix_broken_symlinks:
 
 gen_telemetry:
 	tools/convert_telemetry.py -i $(SRC)/telemetry.h -o frontend/frontkasi/src/Telemetry.js
+
+# export DESTDIR=/home/victor/coding/projects/ninkasi/include/uWebSockets && export QUIC=1 && export_BORINGSSL=1 && make && make install
+# cp uSockets/*.a ../libs/
 
 # Phony targets
 .PHONY: all clean deploy deploy_py sync gen_telemetry
