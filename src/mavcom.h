@@ -19,8 +19,10 @@ class Mavcom : public MavSerialCom, public std::enable_shared_from_this<MavSeria
         bool init();
 
         void request_data_stream(const uint32_t msgid, const uint32_t interval_ms);
+        void request_message(uint16_t command, int index_id = 0, float param2 = 0, float param3 = 0, float param4 = 0, float param5 = 0, int response_target = 0);
         void send_command_int(uint16_t command, float param1 = 0, float param2 = 0, float param3 = 0, float param4 = 0, float param5 = 0, float param6 = 0, float param7 = 0);
 
+        bool send_heartbeat();
         bool send_message(const mavlink_message_t& msg) override;
         void add_listener(MavSerialListener* listener) override;
 

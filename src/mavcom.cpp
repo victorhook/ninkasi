@@ -58,6 +58,25 @@ void Mavcom::send_command_int(uint16_t command, float param1, float param2, floa
     send_message(msg);
 }
 
+
+void Mavcom::request_message(uint16_t command, int index_id, float param2, float param3, float param4, float param5, int response_target)
+{
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack(
+        NINKASI_SYSTEM_ID, NINKASI_COMPONENT_ID, &msg, AP_SYSTEM_ID, AP_COMPONENT_ID, MAV_FRAME_MISSION,
+        MAV_CMD_REQUEST_MESSAGE,
+        0, 0, // Not used
+        command,
+        index_id,
+        0,
+        0,
+        0,
+        0,
+        0
+    );
+    send_message(msg);
+}
+
 void Mavcom::request_data_stream(const uint32_t msgid, const uint32_t interval_ms)
 {
     mavlink_message_t msg;
@@ -76,13 +95,21 @@ void Mavcom::request_data_stream(const uint32_t msgid, const uint32_t interval_m
     send_message(msg);
 }
 
+bool Mavcom::send_heartbeat()
+{
+    mavlink_message_t msg;
+    mavlink_msg_heartbeat_pack(AP_SYSTEM_ID, AP_COMPONENT_ID, &msg, MAV_TYPE_ONBOARD_CONTROLLER, MAV_AUTOPILOT_INVALID, 0, 0, 0);
+    return send_message(msg);
+}
+
+
 bool Mavcom::send_message(const mavlink_message_t& msg)
 {
+    //printf("Queueing message %d (size: %ld)\n", msg.msgid, m_serial_mav_queue_tx.size());
     if (m_serial_mav_queue_tx.full())
     {
         return false;
     }
-    //printf("Queueing message %d (size: %ld)\n", msg.msgid, m_serial_mav_queue_tx.size());
     m_serial_mav_queue_tx.enqueue(msg);
     return true;
 }
