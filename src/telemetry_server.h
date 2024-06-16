@@ -3,8 +3,9 @@
 
 #include "utils.h"
 #include "telemetry.h"
+#include "ws_server.h"
 
-class TelemetryServer : public TcpServer
+class TelemetryServer : public WsServer
 {
     public:
         TelemetryServer(int port);
@@ -12,11 +13,13 @@ class TelemetryServer : public TcpServer
         /* Should be called at main loop fixed frequency */
         void update();
 
+        void go();
+
     protected:
-        void handle_client(int client_socket) override;
         std::string name() const override;
 
     private:
+        void handle_client(int client_socket);
         ThreadSafeQueue<Telemetry> m_telem_queue;
 };
 
