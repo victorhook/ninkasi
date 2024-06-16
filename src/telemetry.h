@@ -4,6 +4,8 @@
 
 typedef struct
 {
+    uint32_t uptime;
+
     float bat_voltage;
     float bat_current;
     float bat_current_consumed;
