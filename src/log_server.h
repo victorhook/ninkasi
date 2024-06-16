@@ -3,33 +3,23 @@
 
 #include "utils.h"
 #include <string>
+#include "ws_server.h"
 
-typedef enum
-{
-    LOG_TYPE_AP      = 1,
-    LOG_TYPE_NINKASI = 2
-} LogType;
 
-typedef struct
-{
-
-} LogBlock;
-
-class LogBlock
-{
-    public:
-        LogBlock();
-};
-
-class LogServer : public TcpServer
+class LogServer : public WsServer
 {
     public:
         LogServer(int port);
-        void addLog(const LogBlock log);
+        ~LogServer();
+        void start() override;
+        void log(std::string msg, LogType type = LOG_TYPE_NINKASI, LogLevel level = LOG_LEVEL_INFO);
 
     protected:
-        void handle_client(int client_socket) override;
-        bool handle_in_thread() const override;
+        std::string name() const override;
+
+    private:
+        void run();
+        ThreadSafeQueue<LogBlock> m_log_queue;
 };
 
 

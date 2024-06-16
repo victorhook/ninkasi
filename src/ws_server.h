@@ -11,7 +11,7 @@ class WsServer
     public:
         WsServer(const int port);
         ~WsServer();
-        void start();
+        virtual void start();
 
     protected:
         const int m_port;
@@ -22,6 +22,7 @@ class WsServer
         void on_close(websocketpp::connection_hdl hdl);
         void on_message(websocketpp::connection_hdl hdl, ws_server::message_ptr msg);
         bool send(const uint8_t* data, const size_t len);
+        bool send(std::string& msg);
 
     private:
         ws_server m_server;

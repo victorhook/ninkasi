@@ -3,6 +3,7 @@
 
 #include "mavcom.h"
 #include "telemetry.h"
+#include "log_server.h"
 
 class AP
 {
@@ -61,6 +62,7 @@ class AP
 
 extern AP ap;
 extern uint32_t frame_number;
+extern LogServer LOG;
 
 
 #endif /* AP_H */

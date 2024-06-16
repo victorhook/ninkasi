@@ -44,6 +44,29 @@ private:
 };
 
 
+typedef enum
+{
+    LOG_TYPE_AP      = 1,
+    LOG_TYPE_NINKASI = 2
+} LogType;
+
+typedef enum
+{
+    LOG_LEVEL_DEBUG   = 1,
+    LOG_LEVEL_INFO    = 2,
+    LOG_LEVEL_WARNING = 3,
+    LOG_LEVEL_ERROR   = 4,
+} LogLevel;
+
+class LogBlock
+{
+    public:
+        LogBlock(std::string msg, LogType type, LogLevel level);
+        std::string msg;
+        LogType type;
+        LogLevel level;
+};
+
 template <typename T>
 class ThreadSafeQueue {
 public:
@@ -71,6 +94,7 @@ private:
 template class ThreadSafeQueue<uint8_t>;
 template class ThreadSafeQueue<mavlink_message_t>;
 template class ThreadSafeQueue<Telemetry>;
+template class ThreadSafeQueue<LogBlock>;
 
 
 #endif /* UTILS_H */

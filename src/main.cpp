@@ -5,6 +5,7 @@
 #include "telemetry_server.h"
 #include "video_server.h"
 #include "mission/mission.h"
+#include "log_server.h"
 
 #include "ws_server.h"
 
@@ -15,11 +16,13 @@ const char* version             = "1.0";
 const int COMMAND_SERVER_PORT   = 2345;
 const int TELEMETRY_SERVER_PORT = 2346;
 const int VIDEO_SERVER_PORT     = 2347;
+const int LOG_SERVER_PORT       = 2348;
 
 AP ap(fc_serial_port, fc_serial_baud);
 CommandServer command_server(COMMAND_SERVER_PORT);
 TelemetryServer telemetry_server(TELEMETRY_SERVER_PORT);
 VideoServer video_server(VIDEO_SERVER_PORT);
+LogServer LOG(LOG_SERVER_PORT);
 Mission* active_mission;
 
 uint32_t frame_number = 0;
@@ -34,18 +37,23 @@ int main()
     using namespace std::chrono;
     const auto period = milliseconds(20);
 
-    printf("*** ninkasi v%s ***\n", version);
+    std::ostringstream boot_msg;
+    boot_msg << "*** ninkasi v" << version << " ***";
 
+    std::cout << boot_msg.str() << std::endl;
 
     ap.init();
     command_server.start();
     telemetry_server.go();
     telemetry_server.start();
+    LOG.start();
     active_mission = Mission::get_startup_mission();
 
     auto next_loop = steady_clock::now();
 
+    LOG.log(boot_msg.str());
     std::cout << "Main loop starting now" << std::endl;
+
 
     while (1)
     {

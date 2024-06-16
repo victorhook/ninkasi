@@ -29,7 +29,6 @@ class TelemetryClient {
         let arrayBuffer = event.data;
         const telemetry = Telemetry.fromBytes(arrayBuffer);
         try {
-            console.log(this.telemetry);
             this.setTelemetry(telemetry);
         } catch (e) {
             console.error("Failed to parse telemetry!", e);

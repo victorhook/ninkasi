@@ -8,6 +8,7 @@ import Map2D from './Map2D/Map2D';
 import TelemetryClient from './TelemetryClient';
 import { useEffect, useState } from 'react';
 import Telemetry from './Telemetry';
+import LogClient from './Log/Log';
 
 
 const params = {
@@ -23,11 +24,23 @@ const attitude = {
 
 function App() {
   const [telemetry, setTelemetry] = useState(new Telemetry());
+  const [apLog, setApLog] = useState([]);
+  const [ninkasiLog, setNinkasiLog] = useState([]);
+
+  const addApLog = (newLogBlock) => {
+    setApLog(prevLogs => [...prevLogs, newLogBlock]);
+  };
+
+  const addNinkasiLog = (newLogBlock) => {
+    setNinkasiLog(prevLogs => [...prevLogs, newLogBlock]);
+  };
 
   const client = new TelemetryClient(setTelemetry);
+  const log = new LogClient(addApLog, addNinkasiLog);
 
   useEffect(() => {
     client.start();
+    log.start();
   }, []);
 
   return (
@@ -46,13 +59,13 @@ function App() {
         </div>
         <div className='row'>
           <div className='col-5 p-1'>
-            <Console />
+            <Console text={ninkasiLog}/>
           </div>
           <div className='col-2 p-1'>
             <DroneModel roll={attitude.roll} pitch={attitude.pitch} yaw={attitude.yaw}/>
           </div>
           <div className='col-5 p-1'>
-            <Console />
+            <Console text={apLog}/>
           </div>
         </div>
 

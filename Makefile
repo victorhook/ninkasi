@@ -45,6 +45,7 @@ SRCS = \
 	$(SRC)/mapped_framebuffer.cpp \
 	$(SRC)/ap.cpp \
 	$(SRC)/ws_server.cpp \
+	$(SRC)/log_server.cpp \
 	$(SRC)/mission/mission.cpp \
 	$(SRC)/mission/state.cpp \
 	$(SRC)/main.cpp

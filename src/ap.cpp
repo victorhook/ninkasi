@@ -180,6 +180,7 @@ void AP::mav_handle_statustext(const mavlink_message_t& msg)
 {
     mavlink_statustext_t status_text;
     mavlink_msg_statustext_decode(&msg, &status_text);
+    LOG.log(std::string(status_text.text), LOG_TYPE_AP);
     printf(">>> AP (%d): %s \n", status_text.severity, status_text.text);
 }
 

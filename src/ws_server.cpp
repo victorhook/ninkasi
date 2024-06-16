@@ -21,8 +21,8 @@ void WsServer::run()
 {
     m_server.init_asio();
 
-    m_server.set_access_channels(websocketpp::log::alevel::fail);
-    m_server.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    m_server.clear_access_channels(websocketpp::log::alevel::all); // Disable all access logging
+    m_server.clear_error_channels(websocketpp::log::elevel::all); // Disable all error logging
     m_server.set_reuse_addr(true);
 
     // Add event handlers
@@ -78,7 +78,7 @@ bool WsServer::send(const uint8_t* data, const size_t len)
             return false;
         }
 
-        std::cout << "Sending data: " << len << " bytes" << std::endl;
+        //std::cout << "Sending data: " << len << " bytes" << std::endl;
 
         auto con = m_con.lock();
         if (!con)
@@ -90,6 +90,41 @@ bool WsServer::send(const uint8_t* data, const size_t len)
         if (hdl && hdl->get_state() == websocketpp::session::state::open)
         {
             m_server.send(con, (const void*) data, len, websocketpp::frame::opcode::binary);
+            return true;
+        }
+
+        std::cout << "Returning 1" << std::endl;
+        return false;
+    } catch (...) {
+        std::cerr << "HAH!![[[[[ Unknown exception" << std::endl;
+    }
+
+    std::cout << "Returning 2" << std::endl;
+
+    return false;
+}
+
+bool WsServer::send(std::string& msg)
+{
+    try {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_connected)
+        {
+            return false;
+        }
+
+        std::cout << "Sending data: " << msg.size() << " characters" << std::endl;
+
+        auto con = m_con.lock();
+        if (!con)
+        {
+            return false;
+        }
+
+        auto hdl = m_server.get_con_from_hdl(con);
+        if (hdl && hdl->get_state() == websocketpp::session::state::open)
+        {
+            m_server.send(con, msg, websocketpp::frame::opcode::TEXT);
             return true;
         }
 
