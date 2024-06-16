@@ -14,12 +14,12 @@ const mission = "IdleMission"
 const state = "Idle"
 const flightTime = '1.23 min'
 
-function Navbar() {
+function Navbar({telemetry}) {
     return (
         <nav className='row'>
             <div className='d-flex'>
                 <NavCard title={'Link'} value={'Connected'}/>
-                <Battery percentage={50}/>
+                <Battery voltage={telemetry.bat_voltage} percentage={telemetry.bat_battery_remaining}/>
                 <NavCard title={'Height'} value={'1.23m'}/>
                 <NavCard title={'Mission'} value={mission}/>
                 <NavCard title={'State'} value={state}/>

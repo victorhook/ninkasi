@@ -1,0 +1,185 @@
+class Telemetry {
+    constructor() {
+        this.uptime = 0;  // number
+        this.bat_voltage = 0;  // number
+        this.bat_current = 0;  // number
+        this.bat_current_consumed = 0;  // number
+        this.bat_battery_remaining = 0;  // number
+        this.pres_abs = 0;  // number
+        this.temperature = 0;  // number
+        this.gps_lat = 0;  // number
+        this.gps_lon = 0;  // number
+        this.gps_alt = 0;  // number
+        this.gps_vel = 0;  // number
+        this.gps_eph = 0;  // number
+        this.gps_epv = 0;  // number
+        this.gps_cog = 0;  // number
+        this.gps_fix_type = 0;  // number
+        this.gps_satellites_visible = 0;  // number
+        this.gps_h_acc = 0;  // number
+        this.gps_v_acc = 0;  // number
+        this.gps_vel_acc = 0;  // number
+        this.imu_xacc = 0;  // number
+        this.imu_yacc = 0;  // number
+        this.imu_zacc = 0;  // number
+        this.imu_xgyro = 0;  // number
+        this.imu_ygyro = 0;  // number
+        this.imu_zgyro = 0;  // number
+        this.imu_xmag = 0;  // number
+        this.imu_ymag = 0;  // number
+        this.imu_zmag = 0;  // number
+        this.imu_temperature = 0;  // number
+        this.vibration_x = 0;  // number
+        this.vibration_y = 0;  // number
+        this.vibration_z = 0;  // number
+        this.imu_clipping = 0;  // number
+        this.roll = 0;  // number
+        this.pitch = 0;  // number
+        this.yaw = 0;  // number
+        this.rollspeed = 0;  // number
+        this.pitchspeed = 0;  // number
+        this.yawspeed = 0;  // number
+        this.altitude = 0;  // number
+        this.relative_altitude = 0;  // number
+        this.vx = 0;  // number
+        this.vy = 0;  // number
+        this.vz = 0;  // number
+        this.lat = 0;  // number
+        this.lon = 0;  // number
+        this.heading = 0;  // number
+        this.servo_out1 = 0;  // number
+        this.servo_out2 = 0;  // number
+        this.servo_out3 = 0;  // number
+        this.servo_out4 = 0;  // number
+        this.servo_out5 = 0;  // number
+        this.servo_out6 = 0;  // number
+        this.rc_channel_1 = 0;  // number
+        this.rc_rssi = 0;  // number
+    }
+
+    static size() {
+        return 166;
+    }
+
+    static fromBytes(bytes) {
+        if (bytes.byteLength !== this.size()) {
+            throw new Error('Invalid byte array length');
+        }
+        let offset = 0;
+        let telemetry = new Telemetry();
+        const dataView = new DataView(bytes);
+        telemetry.uptime = dataView.getUint32(offset, true);
+        offset += 4;
+        telemetry.bat_voltage = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.bat_current = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.bat_current_consumed = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.bat_battery_remaining = dataView.getInt8(offset, true);
+        offset += 1;
+        telemetry.pres_abs = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.temperature = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.gps_lat = dataView.getInt32(offset, true);
+        offset += 4;
+        telemetry.gps_lon = dataView.getInt32(offset, true);
+        offset += 4;
+        telemetry.gps_alt = dataView.getInt32(offset, true);
+        offset += 4;
+        telemetry.gps_vel = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.gps_eph = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.gps_epv = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.gps_cog = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.gps_fix_type = dataView.getUint8(offset, true);
+        offset += 1;
+        telemetry.gps_satellites_visible = dataView.getUint8(offset, true);
+        offset += 1;
+        telemetry.gps_h_acc = dataView.getUint32(offset, true);
+        offset += 4;
+        telemetry.gps_v_acc = dataView.getUint32(offset, true);
+        offset += 4;
+        telemetry.gps_vel_acc = dataView.getUint32(offset, true);
+        offset += 4;
+        telemetry.imu_xacc = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_yacc = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_zacc = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_xgyro = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_ygyro = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_zgyro = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_xmag = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_ymag = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_zmag = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.imu_temperature = dataView.getInt16(offset, true);
+        offset += 2;
+        telemetry.vibration_x = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.vibration_y = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.vibration_z = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.imu_clipping = dataView.getUint32(offset, true);
+        offset += 4;
+        telemetry.roll = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.pitch = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.yaw = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.rollspeed = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.pitchspeed = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.yawspeed = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.altitude = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.relative_altitude = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.vx = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.vy = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.vz = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.lat = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.lon = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.heading = dataView.getFloat32(offset, true);
+        offset += 4;
+        telemetry.servo_out1 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.servo_out2 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.servo_out3 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.servo_out4 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.servo_out5 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.servo_out6 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.rc_channel_1 = dataView.getUint16(offset, true);
+        offset += 2;
+        telemetry.rc_rssi = dataView.getUint8(offset, true);
+        offset += 1;
+        return telemetry;
+    }
+}
+
+export default Telemetry;
