@@ -7,20 +7,31 @@
 class AP
 {
     public:
+        typedef enum
+        {
+            IDLE
+        } ControlState;
+
         AP(const char* serial_port, const int baudrate);
         ~AP();
         bool init();
 
         /* Should be called from main loop at fixed frequency */
         void update();
+
+        void set_control_state(const ControlState ctrl_state);
+
         void handle_mavlink_message(const mavlink_message_t& msg, const mavlink_status_t& status);
 
         Mavcom mavcom;
         Telemetry telemetry;
-        uint32_t frame_number;
 
     private:
         uint32_t m_last_heartbeat;
+        uint32_t m_uptime_t0;
+        ControlState m_ctrl_state;
+
+        void send_control_signal();
 
         // Mavlink handlers
         void mav_handle_sys_status(const mavlink_message_t& msg);
@@ -39,7 +50,6 @@ class AP
         void mav_handle_vibration(const mavlink_message_t& msg);
         void mav_handle_esc_status(const mavlink_message_t& msg);
         void mav_handle_optical_flow(const mavlink_message_t& msg);
-
 
         void mav_handle_autopilot_version(const mavlink_message_t& msg);
         void mav_handle_heartbeat(const mavlink_message_t& msg);

@@ -5,9 +5,9 @@
 
 AP::AP(const char* serial_port, const int baudrate) :
 mavcom(serial_port, baudrate),
-frame_number(0)
+m_ctrl_state(ControlState::IDLE)
 {
-
+    m_uptime_t0 = millis();
 }
 
 AP::~AP()
@@ -23,22 +23,26 @@ bool AP::init()
         printf("Mavcom failed initialization, this is serious issue!\n");
         return false;
     }
+    // Send initial requests
+    mavcom.request_message(MAVLINK_MSG_ID_AUTOPILOT_VERSION);
 
     // Init: AUTOPILOT_VERSION
+    mavcom.request_data_stream(MAVLINK_MSG_ID_GPS_RAW_INT,         100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_SCALED_IMU,          100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_SCALED_PRESSURE,     100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_LOCAL_POSITION_NED,  100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_ATTITUDE,            100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_BATTERY_STATUS,      100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_VIBRATION,           100);
+    mavcom.request_data_stream(MAVLINK_MSG_ID_RC_CHANNELS,         100);
+
+    mavcom.request_data_stream(MAVLINK_MSG_ID_SERVO_OUTPUT_RAW,    200);
 
     mavcom.request_data_stream(MAVLINK_MSG_ID_SYS_STATUS,          1000);
     mavcom.request_data_stream(MAVLINK_MSG_ID_DISTANCE_SENSOR,     1000);
     mavcom.request_data_stream(MAVLINK_MSG_ID_RADIO_STATUS,        1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_GPS_RAW_INT,         1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_SCALED_IMU,          1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_SCALED_PRESSURE,     1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_LOCAL_POSITION_NED,  1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_RC_CHANNELS,         1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_SERVO_OUTPUT_RAW,    1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_ATTITUDE,            1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_BATTERY_STATUS,      1000);
-    mavcom.request_data_stream(MAVLINK_MSG_ID_VIBRATION,           1000);
+
     mavcom.request_data_stream(MAVLINK_MSG_ID_ESC_STATUS,          1000);
     mavcom.request_data_stream(MAVLINK_MSG_ID_OPTICAL_FLOW,        1000);
 
@@ -50,11 +54,32 @@ void AP::update()
 {
     if (frame_number % 25 == 0)
     {
-        mavlink_message_t msg;
-        mavlink_msg_heartbeat_pack(AP_SYSTEM_ID, AP_COMPONENT_ID, &msg, MAV_TYPE_ONBOARD_CONTROLLER, MAV_AUTOPILOT_INVALID, 0, 0, 0);
-        mavcom.send_message(msg);
+        mavcom.send_heartbeat();
+    }
+    if (frame_number % 5 == 0)
+    {
+        send_control_signal();
+    }
+
+    telemetry.uptime = millis() - m_uptime_t0;
+}
+
+void AP::set_control_state(const ControlState ctrl_state)
+{
+    m_ctrl_state = ctrl_state;
+}
+
+void AP::send_control_signal()
+{
+    switch (m_ctrl_state)
+    {
+        case IDLE:
+            // During idle we don't send any control signals to AP
+            break;
     }
 }
+
+// Mavlink handling
 
 void AP::handle_mavlink_message(const mavlink_message_t& msg, const mavlink_status_t& status)
 {
@@ -66,6 +91,18 @@ void AP::handle_mavlink_message(const mavlink_message_t& msg, const mavlink_stat
             break;
         case MAVLINK_MSG_ID_SYS_STATUS:
             mav_handle_sys_status(msg);
+            break;
+        case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
+            mav_handle_autopilot_version(msg);
+            break;
+        case MAVLINK_MSG_ID_STATUSTEXT:
+            mav_handle_statustext(msg);
+            break;
+        case MAVLINK_MSG_ID_COMMAND_ACK:
+            mav_handle_command_ack(msg);
+            break;
+        case MAVLINK_MSG_ID_PARAM_VALUE:
+            mav_handle_param_value(msg);
             break;
 
         case MAVLINK_MSG_ID_DISTANCE_SENSOR:
@@ -111,16 +148,6 @@ void AP::handle_mavlink_message(const mavlink_message_t& msg, const mavlink_stat
             mav_handle_optical_flow(msg);
             break;
 
-
-        case MAVLINK_MSG_ID_STATUSTEXT:
-            mav_handle_statustext(msg);
-            break;
-        case MAVLINK_MSG_ID_COMMAND_ACK:
-            mav_handle_command_ack(msg);
-            break;
-        case MAVLINK_MSG_ID_PARAM_VALUE:
-            mav_handle_param_value(msg);
-            break;
         default:
             printf("No handler for mavlink message %d\n", msg.msgid);
             fflush(stdout);
@@ -140,6 +167,13 @@ void AP::mav_handle_sys_status(const mavlink_message_t& msg)
     mavlink_sys_status_t status;
     mavlink_msg_sys_status_decode(&msg, &status);
     //printf(">>> AP_STATUS: Voltage: %d\n", status.voltage_battery);
+}
+
+void AP::mav_handle_autopilot_version(const mavlink_message_t& msg)
+{
+    mavlink_autopilot_version_t version;
+    mavlink_msg_autopilot_version_decode(&msg, &version);
+    printf("AUTOPILOT VERSION!\n");
 }
 
 void AP::mav_handle_statustext(const mavlink_message_t& msg)
@@ -207,12 +241,12 @@ void AP::mav_handle_attitude(const mavlink_message_t& msg)
 {
     mavlink_attitude_t attitude;
     mavlink_msg_attitude_decode(&msg, &attitude);
-    telemetry.roll = attitude.roll;
-    telemetry.pitch = attitude.pitch;
-    telemetry.yaw = attitude.yaw;
-    telemetry.rollspeed = attitude.rollspeed;
-    telemetry.pitchspeed = attitude.pitchspeed;
-    telemetry.yawspeed = attitude.yawspeed;
+    telemetry.roll = radians_to_degrees(attitude.roll);
+    telemetry.pitch = radians_to_degrees(attitude.pitch);
+    telemetry.yaw = radians_to_degrees(attitude.yaw);
+    telemetry.rollspeed = radians_to_degrees(attitude.rollspeed);
+    telemetry.pitchspeed = radians_to_degrees(attitude.pitchspeed);
+    telemetry.yawspeed = radians_to_degrees(attitude.yawspeed);
 }
 
 void AP::mav_handle_local_position_ned(const mavlink_message_t& msg)
@@ -263,7 +297,7 @@ void AP::mav_handle_battery_status(const mavlink_message_t& msg)
 {
     mavlink_battery_status_t bat;
     mavlink_msg_battery_status_decode(&msg, &bat);
-    telemetry.bat_voltage = bat.voltages[0];
+    telemetry.bat_voltage = (float) bat.voltages[0] / 1000.0;
     telemetry.bat_current = bat.current_battery;
     telemetry.bat_current_consumed = bat.current_consumed;
     telemetry.bat_battery_remaining = bat.battery_remaining;
@@ -290,8 +324,6 @@ void AP::mav_handle_optical_flow(const mavlink_message_t& msg)
 }
 
 
-
-void AP::mav_handle_autopilot_version(const mavlink_message_t& msg) {}
 
 void AP::mav_handle_timesync(const mavlink_message_t& msg) {}
 

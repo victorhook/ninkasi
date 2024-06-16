@@ -34,7 +34,10 @@ bool Mavproxy::init()
 
 void Mavproxy::handle_message(const mavlink_message_t& msg)
 {
-    m_tcp_tx_queue.enqueue(msg);
+    if (!m_tcp_tx_queue.full())
+    {
+        m_tcp_tx_queue.enqueue(msg);
+    }
 }
 
 
