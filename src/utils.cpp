@@ -77,7 +77,12 @@ uint64_t millis() {
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
+constexpr double RAD_TO_DEG = 180.0 / M_PI;
 
+float radians_to_degrees(float radians)
+{
+    return radians * RAD_TO_DEG;
+}
 
 
 TcpServer::TcpServer(int port) : port(port), running(false) {}

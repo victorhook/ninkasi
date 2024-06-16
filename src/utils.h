@@ -23,7 +23,8 @@ uint64_t micros();
 /* Function to get the current timestamp in milliseconds */
 uint64_t millis();
 
-
+/* Converts radians to degrees */
+float radians_to_degrees(float radians);
 
 class TcpServer {
 public:
