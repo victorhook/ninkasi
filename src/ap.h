@@ -37,6 +37,7 @@ class AP
         // Mavlink handlers
         void mav_handle_sys_status(const mavlink_message_t& msg);
         void mav_handle_distance_sensor(const mavlink_message_t& msg);
+        void mav_handle_rangefinder(const mavlink_message_t& msg);
         void mav_handle_radio_status(const mavlink_message_t& msg);
         void mav_handle_gps_raw_int(const mavlink_message_t& msg);
         void mav_handle_scaled_imu(const mavlink_message_t& msg);
@@ -62,7 +63,7 @@ class AP
 
 extern AP ap;
 extern uint32_t frame_number;
-extern LogServer LOG;
+extern LogServer logger;
 
 
 #endif /* AP_H */

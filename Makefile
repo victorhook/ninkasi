@@ -91,7 +91,7 @@ deploy:
 	scp $(TARGET) video.py $(TARGET_HOST):/home/victor/ninkasi/
 
 deploy_py:
-	scp video.py $(TARGET_HOST):/home/victor/ninkasi/
+	rsync -avz ninkasi_python $(TARGET_HOST):/home/victor/ninkasi/
 
 sync:
 	rsync -avz $(TARGET_HOST):/lib sysroot/

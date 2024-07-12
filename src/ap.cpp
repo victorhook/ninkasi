@@ -108,6 +108,9 @@ void AP::handle_mavlink_message(const mavlink_message_t& msg, const mavlink_stat
         case MAVLINK_MSG_ID_DISTANCE_SENSOR:
             mav_handle_sys_status(msg);
             break;
+        case MAVLINK_MSG_ID_RANGEFINDER:
+            mav_handle_rangefinder(msg);
+            break;
         case MAVLINK_MSG_ID_RADIO_STATUS:
             mav_handle_radio_status(msg);
             break;
@@ -180,7 +183,7 @@ void AP::mav_handle_statustext(const mavlink_message_t& msg)
 {
     mavlink_statustext_t status_text;
     mavlink_msg_statustext_decode(&msg, &status_text);
-    LOG.log(std::string(status_text.text), LOG_TYPE_AP);
+    logger.log(std::string(status_text.text), LOG_TYPE_AP);
     printf(">>> AP (%d): %s \n", status_text.severity, status_text.text);
 }
 
@@ -189,6 +192,13 @@ void AP::mav_handle_distance_sensor(const mavlink_message_t& msg)
     mavlink_distance_sensor_t dist;
     mavlink_msg_distance_sensor_decode(&msg, &dist);
     printf("DIST: %d\n", dist.current_distance);
+}
+
+void AP::mav_handle_rangefinder(const mavlink_message_t& msg)
+{
+    mavlink_rangefinder_t rangefinder;
+    mavlink_msg_rangefinder_decode(&msg, &rangefinder);
+    telemetry.rangefinder_distance = rangefinder.distance;
 }
 
 void AP::mav_handle_radio_status(const mavlink_message_t& msg)
@@ -321,7 +331,12 @@ void AP::mav_handle_esc_status(const mavlink_message_t& msg)
 
 void AP::mav_handle_optical_flow(const mavlink_message_t& msg)
 {
-    printf("mav_handle_optical_flow\n");
+    mavlink_optical_flow_t flow;
+    mavlink_msg_optical_flow_decode(&msg, &flow);
+    telemetry.flow_x = flow.flow_x;
+    telemetry.flow_y = flow.flow_y;
+    //printf("mav_handle_optical_flow\n");
+    
 }
 
 

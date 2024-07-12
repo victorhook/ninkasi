@@ -139,6 +139,7 @@ void SimpleCamera::camera_capture()
     }
 }
 
+
 void SimpleCamera::camera_request_complete(Request *request)
 {
     const Request::BufferMap &buffers = request->buffers();
@@ -171,74 +172,30 @@ void SimpleCamera::camera_request_complete(Request *request)
 
         size_t frame_size = planeY.length + planeU.length + planeV.length;
 
+        void* buf_y = mmap(nullptr, planeY.length, PROT_READ, MAP_SHARED, planeY.fd.get(), 0);
+        void* buf_u = mmap(nullptr, planeU.length, PROT_READ, MAP_SHARED, planeU.fd.get(), 0);
+        void* buf_v = mmap(nullptr, planeV.length, PROT_READ, MAP_SHARED, planeV.fd.get(), 0);
 
-        libcamera::MappedFrameBuffer mappedBuffer(buffer, MappedFrameBuffer::MapFlag::Read);
-        const std::vector<libcamera::Span<uint8_t>> mem = mappedBuffer.planes();
 
-        /*
-        void *mapped_mem = mmap(nullptr, frame_size, PROT_READ, MAP_SHARED, planeY.fd.get(), 0);
-
-        if (mapped_mem == MAP_FAILED) {
+        if (buf_y == MAP_FAILED || buf_u == MAP_FAILED || buf_v == MAP_FAILED) {
             cerr << "Failed to mmap plane memory: " << strerror(errno) << endl;
             return;
         }
 
-        printf("\n");
-        printf("Total size: %ld, FD: %d, %d, %d, Length: %d, %d, %d, Offsets: %d, %d, %d, Invalid offsets: %d, %d, %d\n",
-            frame_size,
-            planeY.fd.get(), planeU.fd.get(), planeV.fd.get(),
-            planeY.length, planeU.length, planeV.length,
-            planeY.offset, planeU.offset, planeV.offset,
-            planeY.kInvalidOffset, planeU.kInvalidOffset, planeV.kInvalidOffset
-        );
-        printf("\n");
+        if (munmap(buf_y, planeY.length) < 0 || munmap(buf_u, planeU.length) < 0 || munmap(buf_v, planeV.length) < 0) {
+            cerr << "Failed to munmap plane memory: " << strerror(errno) << endl;
+        }
 
+        //libcamera::MappedFrameBuffer mappedBuffer(buffer, MappedFrameBuffer::MapFlag::Read);
+        //const std::vector<libcamera::Span<uint8_t>> mem = mappedBuffer.planes();
 
-        uint8_t* buf_y = &((uint8_t*) mapped_mem)[0];
-        uint8_t* buf_u = &((uint8_t*) mapped_mem)[planeU.offset];
-        uint8_t* buf_v = &((uint8_t*) mapped_mem)[planeV.offset];
-        */
-        printf("SEG??\n");
-
-        //cv::Mat matY(m_height / 1, m_width / 1, CV_8U, buf_y, m_stride);
-        //cv::Mat matU(m_height / 2, m_width / 2, CV_8U, buf_u, m_stride);
-        //cv::Mat matV(m_height / 2, m_width / 2, CV_8U, buf_v, m_stride);
-        cv::Mat matY(m_height / 1, m_width / 1, CV_8U, mem[0].data(), m_stride);
-        cv::Mat matU(m_height / 2, m_width / 2, CV_8U, mem[1].data(), m_stride);
-        cv::Mat matV(m_height / 2, m_width / 2, CV_8U, mem[2].data(), m_stride);
-
-        printf("SEG2??\n");
-
-        long pages = sysconf(_SC_PHYS_PAGES);
-        long page_size = sysconf(_SC_PAGE_SIZE);
-        auto mem_left = pages * page_size;
-        cout << "MEMORY LEFT: " << mem_left << endl;
-
-        // Upsample U and V planes to match Y plane size
-        cv::Mat matU_resized, matV_resized;
-        cv::resize(matU, matU_resized, cv::Size(m_width, m_height), 0, 0, cv::INTER_LINEAR);
-        cv::resize(matV, matV_resized, cv::Size(m_width, m_height), 0, 0, cv::INTER_LINEAR);
-
-        printf("SEG3??\n");
-
-        // Merge Y, U, and V planes into one YUV image
-        std::vector<cv::Mat> yuv_planes = {matY, matU_resized, matV_resized};
-        cv::Mat yuv_image;
-        cv::merge(yuv_planes, yuv_image);
-
-        printf("SEG24?\n");
-
-        cv::Mat image;
-        cv::cvtColor(yuv_image, image, cv::COLOR_YUV2RGB);
-
-        //cv::Mat image(m_height, m_width, CV_8U, (uint8_t *)(mem[0].data()), m_stride);
 
         //cv::Mat bgr;
         //cv::cvtColor(image, bgr, cv::COLOR_YUV420p2BGR);
 
-        auto filename = "image_super.jpg";
-        cout << "Saving image to" << filename << endl;
-        cv::imwrite(filename, image);
+        //auto filename = "image_super.jpg";
+        //cout << "Saving image to" << filename << endl;
+        //cv::imwrite(filename, image);
 
         //if (munmap(mapped_mem, planeY.length) < 0) {
         //    cerr << "Failed to munmap plane memory: " << strerror(errno) << endl;

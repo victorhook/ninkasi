@@ -57,6 +57,12 @@ typedef struct
     float lat;
     float lon;
     float heading;
+
+    float rangefinder_distance; // In meters
+
+    float flow_x;
+    float flow_y;
+
     uint16_t servo_out1;
     uint16_t servo_out2;
     uint16_t servo_out3;

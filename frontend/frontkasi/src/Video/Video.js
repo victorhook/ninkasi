@@ -5,7 +5,7 @@ function Video() {
     const videoRef = useRef(null);
 
     useEffect(() => {
-        const ws = new WebSocket('ws://ninkasi:2348');
+        const ws = new WebSocket('ws://ninkasi:2347');
 
         ws.onmessage = (event) => {
             const video = videoRef.current;

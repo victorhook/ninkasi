@@ -22,7 +22,7 @@ AP ap(fc_serial_port, fc_serial_baud);
 CommandServer command_server(COMMAND_SERVER_PORT);
 TelemetryServer telemetry_server(TELEMETRY_SERVER_PORT);
 VideoServer video_server(VIDEO_SERVER_PORT);
-LogServer LOG(LOG_SERVER_PORT);
+LogServer logger(LOG_SERVER_PORT);
 Mission* active_mission;
 
 uint32_t frame_number = 0;
@@ -31,7 +31,7 @@ uint32_t frame_number = 0;
 int main()
 {
     //WsServer(1234).start();
-    //video_server.go();
+    video_server.go();
     //return 0;
 
     using namespace std::chrono;
@@ -46,12 +46,12 @@ int main()
     command_server.start();
     telemetry_server.go();
     telemetry_server.start();
-    LOG.start();
+    logger.start();
     active_mission = Mission::get_startup_mission();
 
     auto next_loop = steady_clock::now();
 
-    LOG.log(boot_msg.str());
+    logger.log(boot_msg.str());
     std::cout << "Main loop starting now" << std::endl;
 
 

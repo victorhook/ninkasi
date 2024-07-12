@@ -3,6 +3,7 @@
 from picamera2.encoders import H264Encoder, MJPEGEncoder, Quality
 from picamera2 import Picamera2
 from picamera2.outputs import FileOutput
+from websocket_server import WebsocketServer
 
 import time
 import socket
