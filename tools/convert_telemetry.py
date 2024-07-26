@@ -26,17 +26,7 @@ def parse_header_file(input_file: str):
     return struct_name, members
 
 def get_js_type_and_size(c_type: str):
-    type_mappings = {
-        'int8_t': ('number', 1, 'Int8'),
-        'uint8_t': ('number', 1, 'Uint8'),
-        'int16_t': ('number', 2, 'Int16'),
-        'uint16_t': ('number', 2, 'Uint16'),
-        'int32_t': ('number', 4, 'Int32'),
-        'uint32_t': ('number', 4, 'Uint32'),
-        'float': ('number', 4, 'Float32'),
-        'double': ('number', 8, 'Float64'),
-    }
-    return type_mappings.get(c_type, ('unknown', 0, ''))
+    return ('number', 4, 'Float32')
 
 def generate_js_class(struct_name, members):
     js_class = f"class Telemetry {{\n"
