@@ -3,4 +3,5 @@ mavlink/
 venv/
 sysroot/
 old/
+src_old/
 *.jpg

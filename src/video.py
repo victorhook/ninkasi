@@ -12,11 +12,12 @@ import time
 import socket
 from threading import Thread
 import io
+import os
 
 IMAGE_WIDHT = 640
 IMAGE_HEIGHT = 480
 
-logger = utils.get_logger(__file__)
+logger = utils.get_logger(__name__)
 
 
 class ImageFrameHandler:
@@ -40,7 +41,7 @@ class ImageFrameOutput(FileOutput):
             self.fps = self._fps_counter
             self._fps_counter = 0
             self._t0 = time.time()
-            logger.debug(f'FPS: {self.fps}')
+            #logger.debug(f'FPS: {self.fps}')
 
         if self._frame_handler is not None:
             self._frame_handler.handle_frame(frame)
@@ -54,6 +55,8 @@ class VideoServer(ImageFrameHandler):
     def __init__(self, port: int) -> None:
         self._ip = '0.0.0.0'
         self._port = port
+        # Set libcamera logging level
+        os.environ['LIBCAMERA_LOG_LEVELS'] = '3'
         self._picam2 = Picamera2()
         self._encoder = MJPEGEncoder(10000000)
         self._out: ImageFrameOutput
@@ -63,6 +66,7 @@ class VideoServer(ImageFrameHandler):
     def start(self) -> None:
         # -- Camera init -- #
         logger.info(f'Configuring camera to use resolution {IMAGE_WIDHT}x{IMAGE_HEIGHT}')
+
         video_config = self._picam2.create_video_configuration()
         video_config['main']['size'] = (IMAGE_WIDHT, IMAGE_HEIGHT)
         video_config['raw']['size'] = (IMAGE_WIDHT, IMAGE_HEIGHT)
@@ -97,20 +101,6 @@ class VideoServer(ImageFrameHandler):
                 handler: WebSocketHandler = client['handler']
                 encoded_data = base64.b64encode(frame).decode('utf-8')
                 handler.send_message(encoded_data)
-            '''
-            while not self.out.connectiondead:
-                time.sleep(0.1)
-                self.out.fileoutput.seek(0)
-                frame_data = self.out.fileoutput.read()
-                if frame_data:
-                    encoded_data = base64.b64encode(frame_data).decode('utf-8')
-                    for client in self.ws_clients:
-                        self.server.send_message(client, encoded_data)
-                    self.out.fileoutput.truncate(0)
-
-            logger.info('Done!')
-            self._picam2.stop_recording()
-            '''
 
     # -- Websocket handlers -- #
     def ws_cb_new_client(self, client: dict, server: WebsocketServer) -> None:
