@@ -7,22 +7,55 @@ __all__ = [
     'micros'
 ]
 
+
+MAIN_LOG_FILE = './ninkasi.out'
+
+
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        # Align the log level to a fixed width of 8 characters
+        record.levelname = '{:<7}'.format(record.levelname)
+        return super().format(record)
+
+
+LOG_FORMATTER = CustomFormatter(
+    '[%(levelname)s] %(asctime)s.%(msecs)03d - %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+LOG_DEFAULT_LEVEL = logging.DEBUG
+
 t0 = time.time()
 
 loggers = {}
+
+# Stream handler (stdout/stderr)
+handlers = [
+    logging.StreamHandler(),
+    logging.FileHandler(MAIN_LOG_FILE, 'a')
+]
+
+for handler in handlers:
+    handler.setFormatter(LOG_FORMATTER)
+    handler.setLevel(LOG_DEFAULT_LEVEL)
 
 
 def get_logger(name: str) -> logging.Logger:
     global loggers
     if name not in loggers:
         logger = logging.getLogger(name)
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('[%(levelname)s] %(asctime)s: %(message)s'))
 
-        handler.setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+        # Stream handler (stdout/stderr)
+        handlers = [
+            logging.StreamHandler(),
+            logging.FileHandler(MAIN_LOG_FILE, 'a')
+        ]
 
-        #logger.handlers = [handler]
+        for handler in handlers:
+            handler.setFormatter(LOG_FORMATTER)
+            handler.setLevel(LOG_DEFAULT_LEVEL)
+
+        logger.handlers = handlers
+        logger.setLevel(LOG_DEFAULT_LEVEL)
         loggers[name] = logger
 
     return loggers[name]
@@ -39,7 +72,8 @@ def micros() -> int:
 from abc import abstractmethod
 from threading import Thread, Event
 import socket
-
+import fcntl
+import struct
 
 class TcpServer:
 
@@ -84,6 +118,13 @@ class TcpServer:
 
     def is_running(self) -> bool:
         return not self._stop_flag.is_set()
+
+    def available_bytes(self, sock: socket.socket) -> int:
+        ''' Returns the number of bytes available of the given socket'''
+        FIONREAD = 0x541B
+        # Perform ioctl system call to get the number of bytes available for reading
+        pending = struct.unpack('I', fcntl.ioctl(sock, FIONREAD, struct.pack('I', 0)))[0]
+        return pending
 
     def _updater(self) -> None:
         next_update = micros()

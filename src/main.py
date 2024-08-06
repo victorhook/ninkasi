@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
-from ast import Set
 import sys
 import os
-
 import time
-from threading import Thread
 
 from ap import AP
-from telemetry import Telemetry
 from utils import get_logger, millis, micros
 from mavcom import MavCom
+from mavproxy import MavProxy
 from settings import Settings
-from video import VideoServer
 from telemetry_server import TelemetryServer
 
 
@@ -22,16 +18,34 @@ logger = get_logger(__name__)
 
 
 if __name__ == '__main__':
+    env = os.environ.get('NINKASI_ENV')
+
     settings = Settings()
-    ap = AP()
+
     mavcom = MavCom(settings.serial_port, settings.serial_baud)
-    video_server = VideoServer(settings.video_server_port)
+    mavproxy = MavProxy(settings.mavproxy_server_port, mavcom)
+
+    ap = AP(mavcom)
     telemetry_server = TelemetryServer(settings.telemetry_server_port, ap.telemetry)
 
+
+    # Local / Onboard specific
+    if env == 'local':
+        pass
+    else:
+        from video import VideoServer
+        video_server = VideoServer(settings.video_server_port)
+
     # Start servers/services
-    mavcom.start()
-    video_server.start()
     telemetry_server.start()
+    mavcom.start()
+    mavproxy.start()
+
+    # Local / Onboard specific
+    if env == 'local':
+        pass
+    else:
+        video_server.start()
 
 
     # Main loop starts here

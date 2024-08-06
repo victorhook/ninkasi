@@ -13,12 +13,15 @@ import socket
 from threading import Thread
 import io
 import os
+import logging
 
 IMAGE_WIDHT = 640
 IMAGE_HEIGHT = 480
 
 logger = utils.get_logger(__name__)
 
+# Unfortunately, picamera2 lib adds a default log handler during import so this is necessary...
+logging.getLogger('root').handlers = []
 
 class ImageFrameHandler:
 
@@ -118,7 +121,7 @@ class VideoServer(ImageFrameHandler):
             logger.debug(f'Client disconnected: {client}')
 
     def ws_cb_message_received(self, client: dict, server: WebsocketServer, message) -> None:
-        print(type(client), type(server), type(message), 'MSG')
+        logger.info((type(client), type(server), type(message), 'MSG'))
 
 
 if __name__ == '__main__':
