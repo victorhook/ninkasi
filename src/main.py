@@ -47,6 +47,7 @@ if __name__ == '__main__':
     else:
         video_server.start()
 
+    ap.setup()
 
     # Main loop starts here
     period_us = (1 / FRAMERATE_HZ) * 1000000

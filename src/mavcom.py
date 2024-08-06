@@ -64,6 +64,12 @@ class MavCom:
         Thread(target=self._writer, name='MavCom TX', daemon=True).start()
         logger.info('Connected!')
 
+    def set_message_interval(self, message_id: int, interval: int = 1) -> None:
+        self.send_command_int(command=ardupilotmega.MAV_CMD_SET_MESSAGE_INTERVAL, param1=message_id, param2=interval)
+
+    def send_command_int(self, frame: int = 0, command: int = 0, param1: float = 0, param2: float = 0, param3: float = 0, param4: float = 0, x: float = 0, y: float = 0, z: float = 0) -> None:
+        self._tx.put(self._mav.command_int_encode(AP_SYSTEM_ID, AP_COMPONENT_ID, frame, command, 0, 0, param1, param2, param3, param4, x, y, z))
+
     def stop(self) -> None:
         self._stop_flag.set()
 
